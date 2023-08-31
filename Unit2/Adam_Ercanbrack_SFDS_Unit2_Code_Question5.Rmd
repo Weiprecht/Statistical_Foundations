@@ -1,0 +1,242 @@
+---
+title: "Stats-Foundation-Unit2"
+author: "Adam E."
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load_library}
+
+library(tidyverse)
+library(ggplot2)
+library(ggthemes)
+library(plotly)
+
+```
+
+
+```{r collect the data}
+# Create vectors for each column
+Not_fired <- c(27, 33, 36, 37, 38, 38, 39, 42, 42, 43, 43, 44, 44, 44, 45, 45, 45, 45, 46, 46, 47, 47, 48, 48, 49, 49, 51, 51, 52, 54)
+Fired <- c(34, 37, 37, 38, 41, 42, 43, 44, 44, 45, 45, 45, 46, 48, 49, 53, 53, 54, 54, 55, 56)
+
+# Make the "Fired" vector the same length as "Not_fired" by adding NA values
+length_difference <- length(Not_fired) - length(Fired)
+if (length_difference > 0) {
+  Fired <- c(Fired, rep(NA, length_difference))
+}
+
+# Create the data frame
+data <- data.frame(Not_fired, Fired)
+
+# Print the data frame
+print(data)
+```
+
+# Critical values use the alpha and the degrees of freedom to find the critical
+value on the t-distribution table.
+```{r critical_value_two-tailed}
+n1 <- length(Fired)
+n1
+n2 <- length(Not_fired)
+n2
+alpha <- 0.05 # Significance level
+df <- n1 + n2 - 2 # Degrees of freedom
+# one-tailed
+t_critical_lower <- qt(alpha / 2, df)
+t_critical_lower
+# Two tails
+t_critical_upper <- qt(1 - alpha / 2, df)
+t_critical_upper
+```
+
+#' Credit: Volodymyr Orlov
+#' modified by MSDS SMU
+#' https://github.com/VolodymyrOrlov/MSDS6371/blob/master/shade.r
+#' Draws a t-distribution curve and shades rejection regions
+#' 
+#' @param df degrees of freedom.
+#' @param alpha significance level
+#' @param h0 null hypothesis value
+#' @param sides one of: both, left, right
+#' @param t_calc calculated test statistics
+#' @examples
+#' shade(49, 0.05, 0, t_calc=1.1)
+#' shade(91, 0.05, 0, t_calc=NULL, sides = 'right')
+#' shade(7, 0.05, 0, t_calc=1.5, sides = 'left')
+#' shade(7, 0.05, 0, t_calc=1.5, sides = 'both')
+```{r}
+shade <- function(df, alpha, h0 = 0, sides='both', t_calc=NULL) {
+  e_alpha = alpha
+  if(sides == 'both'){
+    e_alpha = alpha / 2
+  }
+  cv = abs(qt(e_alpha, df))
+  curve(dt(x, df), from = -4, to = 4, ylab='P(x)', xaxt='n') 
+  abline(v = 0, col = "black", lwd = 0.5)
+  labels = h0
+  at = 0
+  if(sides == 'both' | sides == 'left'){
+    x <- seq(-4, -abs(cv), len = 100) 
+    y <- dt(x, df)
+    polygon(c(x, -abs(cv)), c(y, min(y)), col = "blue", border = NA)
+    lines(c(-cv, -cv), c(0, dt(-cv, df)), col = "black", lwd = 1)
+    text(-cv - (4 - cv) / 2, 0.05, e_alpha)
+    labels = c(round(-cv, 3), labels)
+    at = c(-cv, at)
+  }
+  if(sides == 'both' | sides == 'right'){
+    x <- seq(abs(cv), 4, len = 100)
+    y <- dt(x, df)
+    polygon(c(abs(cv), x), c(min(y), y), col = "blue", border = NA)
+    lines(c(cv, cv), c(0, dt(cv, df)), col = "black", lwd = 1)
+    text(cv + (4 - cv) / 2, 0.05, e_alpha)
+    labels = c(labels, round(cv, 3))
+    at = c(at, cv)
+  }
+  if(is.numeric(t_calc)){
+    abline(v = t_calc, col = "red", lwd = 2)
+    text(t_calc + 0.5, 0.2, t_calc, col = "red")
+  }
+  axis(1, at=at, labels=labels)
+}
+#The above defines the function shade. To use it, you must call it. More examples are in the comments above.
+shade(49, 0.05, 0, t_calc=1.1)
+```
+```{r two-sample_test_statistic}
+
+
+# Calculate sample statistics
+x_bar1 <- mean(Fired)
+#x_bar1
+x_bar2 <- mean(Not_fired)
+#x_bar2
+s1 <- sd(Fired)
+#s1
+s2 <- sd(Not_fired)
+#s2
+n1 <- length(Fired)
+n2 <- length(Not_fired)
+
+
+# Calculate pooled standard error
+sp <- sqrt(((s1^2 * (n1 - 1) + s2^2 * (n2 - 1)) / (n1 + n2 - 2)) * (1/n1 + 1/n2))
+sp
+
+# Calculate pooled standard deviation
+psd <- sqrt(((n1-1)*s1^2 + (n2-1)*s2^2) / (n1+n2-2))
+psd
+
+# Calculate pooled test-statistic
+pooled_t_statistic <- (x_bar1 - x_bar2) / (psd * sqrt(1/n1 + 1/n2))
+pooled_t_statistic
+
+# Calculate one-sample test statistic 
+#t_statistic <- (x_bar1 - x_bar2) / sqrt((s1^2 / n1) + (s2^2 / n2))
+#t_statistic
+
+# calculate one sample standard error
+#print(sqrt(sum((a - mean(a)) ^ 2/(length(a) - 1)))
+#      /sqrt(length(a)))
+
+```
+```{r confidence_intervals}
+
+# Calculate critical t-value for chosen confidence level and degrees of freedom
+df <- n1 + n2 - 2
+t_critical <- qt(0.025, df) # For a two-tailed test and 95% confidence level
+t_critical
+
+# Calculate confidence intervals for each sample
+ci_group1 <- c(x_bar1 + t_critical * (s1 / sqrt(n1)), x_bar1 - t_critical * (s1 / sqrt(n1)))
+ci_group2 <- c(x_bar2 + t_critical * (s2 / sqrt(n2)), x_bar2 - t_critical * (s2 / sqrt(n2)))
+ci_group1
+ci_group2
+
+# Compare confidence intervals
+# When comparing confidence intervals from two groups, overlap can indicate the 
+#level of uncertainty and the potential for overlap in the true differences. If 
+# the intervals overlap substantially, it suggests that the observed differences
+# are not significantly different from each other.
+if (ci_group1[2] < ci_group2[1] || ci_group2[2] < ci_group1[1]) {
+  print("Confidence intervals do not overlap. Significant difference.")
+} else {
+  print("Confidence intervals overlap. No significant difference.")
+}
+
+# Calculate pooled confidence interval
+upper_bound <- (x_bar1 - x_bar2) - (t_critical * psd * sqrt(1/n1 + 1/n2))
+lower_bound <- (x_bar1 - x_bar2) + (t_critical * psd * sqrt(1/n1 + 1/n2))
+
+pooled_confidence_interval <- c(lower_bound, upper_bound)
+
+pooled_confidence_interval
+
+```
+
+
+
+```{r two-sample_t-test}
+
+t.test(x = Fired, y = Not_fired, conf.int = .95, var.equal = TRUE, alternative = "two.sided")
+```
+
+
+
+
+
+
+# P-value Calculation
+# parameters: the test statistics calculated 1.08 rounded and 49 is the degree of freedom
+```{r}
+pt(1.08, 49, lower.tail = FALSE) # p value one-sided
+pt(1.08, 49, lower.tail = FALSE)*2 # p value two-sided
+```
+
+
+
+
+
+
+
+# "The following are ages of 7 randomly chosen patrons seen leaving the Beach Comber in South Mission Beach at 7pm!  We assume that the data come from a normal distribution and would like to test the claim that the mean age of the distribution of Comber patrons is different than 21.  Conduct a 6 step hypothesis test to test this claim.  
+	25, 19, 37, 29, 40, 28, 31"
+# Step 1: H0: Beach Comber patrons' ages are, on average, equal to 21. Ha: Beach Comber patrons' ages are, on average, not equal to 21.  
+# Step 2: Draw and shade the model - because the alternative hypothesis is not equal to 21, this is a (Two-tailed) model with 0.025 on the extreme ends.
+# Step 3: Test the sample against the hypothesis: The test statistic is 3.309315
+# Step 4: Quantify the difference: t-score = 3.3093, p-value = 0.01622
+# Step 5: Decide to reject or fail to reject (FTR) H0: Since the p-value (0.01622) is < the alpha (0.025), we fail to reject the null hypothesis.
+# Step 6: Conclusion: There is sufficient evidence to suggest (p-value 0.01622) that the mean age of patrons is not different than 21.
+
+```{r BeachComber_vector}
+#define vector of turtle weights
+patron_ages <- c(25, 19, 37, 29, 40, 28, 31)
+n <- length(patron_ages) # total samples
+m_ages <- mean(patron_ages) # xbar - sample mean
+
+# Variance in the sample data - called S2
+# If you are finding the population variance then append *(n-1)/n to var(data)
+variance_ages <- var(patron_ages) 
+
+cat("Patrons' mean age is :", m_ages, "\n")
+cat("The variance in the data is :", variance_ages, "\n")
+
+# T- (value) statistic
+t_obs = (m_ages - 21)/(sqrt(variance_ages/n))
+cat("The T-statistic is :", t_obs, "\n")
+
+#perform one sample t-test
+t.test(x = patron_ages, alternative="two.sided", mu = 21, conf.level=0.95)
+
+```
+
+# Confirm where the p-value falls
+```{r}
+# If the p-value < the alpha (True) you will fail to reject the H0. If the p-value > than the alpha (False) you reject the null hypothesis.
+.01622 < .025
+```
+
