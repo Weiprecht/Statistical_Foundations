@@ -7,6 +7,7 @@ output: html_document
 
 ```{r}
 #install.packages("gapminder")
+# install.packages("GGally")
 library(gapminder)
 data("gapminder")
 ```
@@ -26,11 +27,12 @@ install.packages("emmeans")
 library(tidyverse)
 library(dplyr)
 library(emmeans)
+library(GGally)
 ```
 
 # F Critical Value
 ```{r}
-qf(0.05,1,196, lower.tail = FALSE) # Note: For Ftest, alpha is always  the exact amount not divided by 2
+qf(0.05,1,196, lower.tail = FALSE) # Note: For Ftest, alpha is always the exact amount not divided by 2
 ```
 
 # t Critical Value Calculation
@@ -57,7 +59,7 @@ t.test(data, alternative = "two.sided")
 t.test(data, mu =30, alternative = "two.sided")
 
 
-Database <- data.frame(read.csv("D:/SMU/Ph.D/Data Science/Statistical Foundation for Data Science/Assignment/Unit 2/Creativity.csv"))
+Database <- data.frame(read.csv("D:/University/SMU/Statistical_Foundations_for_Data_Science/Stat_foundations_repository/Statistical_Foundations/Unit1/Creativity.csv"))
 
 # Two sample t.test- two.sided or one.sided
 t.test(Score ~ Treatment, data = Database, conf.level = 0.99, var.equal = TRUE, alternative = "two.sided", ) # alternative can be, greater, less, and two.sided,
@@ -82,8 +84,8 @@ hist(Database$Score[Database$Treatment == 0])
 n1 = 50 # sample size per sample for 1st distribution
 n2 = 50 # sample size per sample for 2nd distribution (we will compare these distribuions) 
 simulations = 1000 #number of samples and thus number of xbars we will generate.  
-#mu = 0; # mean parameter for use with normal distribuions
-#sigma = 1; # standard deviation parameter for use with normal distribuions
+mu = 0; # mean parameter for use with normal distribuions
+sigma = 1; # standard deviation parameter for use with normal distribuions
 population1  = rnorm(10000000,10,1)
 hist(population1, col = "blue", main = "Histogram of the Population 1")
 mean(population1)
@@ -207,6 +209,174 @@ box()
 pvalue <- counter/number_of_permutations
 pvalue
 ```
+
+```{r filter_verb}
+# Select cty column and filter rows with class "compact"
+result <- mpg %>%
+  select(cty, class, year) %>%
+  filter(class == 'compact', year < 2000)
+print(result)
+hist_result <- result %>%
+  ggplot(aes(x=cty)) +
+    geom_histogram() +
+    ggtitle("City MPG")
+hist_result
+mpg
+```
+
+```{r filter_verb}
+# Select cty column and filter rows with class "compact"
+result <- mpg %>%
+  select(class, year, cty, hwy) %>%
+  filter(class == 'suv', cty > 13 | hwy >= 10)
+print(result)
+hist_result <- result %>%
+  ggplot(aes(x=cty)) +
+    geom_histogram() +
+    ggtitle("City MPG")
+hist_result
+mpg
+```
+
+
+```{r intro_na}
+x = NA
+is.na(x)
+```
+
+```{r NA_wrangling}
+# age vectors
+age = c(22,21,NA,19,20,23)
+# years of math vectors
+yrs_math_ed = c(4,5,NA,5,3,5)
+# define the names and subjects
+names = c("Mary","Martha","Kim","Kristen","Amy","Sam")
+subject = c("English","Math","Sociology","Math","Music","Dance")
+# Create the data frame
+df7 = data.frame(Age = age, Years = yrs_math_ed, Name = names, Subject = subject)
+# ploat as a barplot with years on the y axis and the x axis divided by names
+barplot(df7$Years, names.arg = df3$Name, ylab="Math Years", main="Math Years")
+df7
+is.na(df7$Years)
+is.na(df7$Name)
+is.na(df7$Major)
+```
+```{r NA_wrangling}
+
+
+filter_df7 <-df7 %>%
+  # include any column that does not have na
+  filter(!is.na(Years))
+filter_df7
+```
+
+```{r filter_verb}
+# Select cty column and filter rows with class "compact"
+result2 <- mpg %>%
+  select(manufacturer,class, year, cty, hwy) %>%
+  arrange(manufacturer, cty) %>%
+print(result2)
+hist_result <- result %>%
+  ggplot(aes(x=cty)) +
+    geom_histogram() +
+    ggtitle("City MPG")
+hist_result
+mpg
+```
+
+```{r ggally_intro}
+# Compare the columns against each other.
+mpg %>%
+  select(class, cty, hwy) %>%
+  ggpairs(aes(color=class))
+```
+
+# Data Import from csv
+```{r csv_import2}
+Path <- "D:/University/SMU/Doing_Data_Science/DDS_repository/Doing-Data-Science/Unit3/FIFA_Players.csv"
+FIFA = read.csv(Path, header=TRUE)
+FIFA
+# file.choose() - pops up behind Rstudio.
+#Example3 = read.csv(file.choose()) 
+#Example3
+
+```
+
+```{r}
+
+FIFA %>%
+  select(Finishing, BallControl, ShotPower) %>%
+  ggpairs()
+
+```
+
+
+```{r}
+
+FIFA %>%
+  select(Finishing, BallControl, ShotPower, Preferred.Foot) %>%
+  filter(Preferred.Foot == 'Right' | Preferred.Foot == 'Left') %>%
+  ggpairs(aes(color=Preferred.Foot))
+
+```
+
+```{r}
+# Unit 4 Live Session R Code
+
+install.packages("nycflights13")
+
+library(nycflights13)
+```
+
+
+```{r}
+airlines                                        
+airports                                        
+flights                                         
+planes                                          
+weather
+
+```
+
+```{r}
+# Unit 4 Live Session R Code
+
+#Question 1
+
+# Dataframe Arranged But Plot Not Ordered
+FIFA %>% filter(!is.na(BallControl)) %>% group_by(Position) %>% summarize(meanBC = mean(BallControl),count = n()) %>% arrange(meanBC)
+FIFA %>% filter(!is.na(BallControl)) %>% group_by(Position) %>% summarize(meanBC = mean(BallControl),count = n()) %>% arrange(meanBC) %>% ggplot(aes(x = Position, y = meanBC)) + geom_col()
+
+```
+
+```{r}
+
+# Data Frame arranged and Plot Ordered (arrange here is reducndent)
+
+FIFA %>% filter(!is.na(BallControl)) %>% group_by(Position) %>% summarize(meanBC = mean(BallControl),count = n()) %>% arrange(meanBC) %>% ggplot(aes(x = factor(Position, levels = Position[order(meanBC)]), y = meanBC)) + geom_col()
+
+```
+
+```{r}
+# Data Frame not arranged but Plot Ordered
+FIFA %>% filter(!is.na(BallControl)) %>% group_by(Position) %>% summarize(meanBC = mean(BallControl),count = n()) %>% ggplot(aes(x = factor(Position, levels = Position[order(meanBC)]), y = meanBC)) + geom_col()
+```
+
+
+#Question 2
+
+#Dropping Unused Levels from a Factor using droplevels
+```{r}
+FIFA %>% select(Agility,Acceleration,Position) %>% filter(Position == "LM" | Position == "LF") %>% droplevels() %>% ggpairs(aes(color = Position))
+
+# Hack ... create new variable with only those levels
+
+FIFA2 = FIFA %>% filter(Position == "LM" | Position == "LF")
+FIFA2$Position = as.factor(as.character(FIFA2$Position))
+FIFA2 %>% select(Agility,Acceleration,Position) %>% ggpairs(aes(color = Position))
+
+```
+
 
 
 
